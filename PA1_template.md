@@ -1,14 +1,9 @@
----
-title: 'Reproducible Research: Peer Assessment 1'
-output:
-  html_document:
-    keep_md: yes
-  pdf_document: default
----
+# Reproducible Research: Peer Assessment 1
 
 We will use the `dplyr` package to simplify data operations, `lubridate` for date operations, and `ggplot2` for graphics. If the `dplyr`, `lubridate` or `ggplot2` package is not installed, please install it using ```install.packages('dplyr', 'lubridate', 'ggplot2')```
 
-```{r message=FALSE}
+
+```r
   library(dplyr)
   library(lubridate)
   library(ggplot2)
@@ -16,7 +11,8 @@ We will use the `dplyr` package to simplify data operations, `lubridate` for dat
 
 ## Loading and preprocessing the data
 Load the data from ./activity.zip:activity.csv into activity.data. Convert the date from a character string to a date object and add a column translating interval to time of day. Then examine the basic structure to ensure it loaded correctly.
-```{r results='markup'}
+
+```r
   stopifnot(file.exists('./activity.zip'))
   
   activity.data <- unz('./activity.zip', 'activity.csv') %>%
@@ -29,9 +25,17 @@ Load the data from ./activity.zip:activity.csv into activity.data. Convert the d
   str(activity.data)
 ```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ date : POSIXct, format: "2012-10-01" "2012-10-01" ...
+##  $ time : chr  "00:00" "00:05" "00:10" "00:15" ...
+##  $ steps: int  NA NA NA NA NA NA NA NA NA NA ...
+```
+
 ## What is mean total number of steps taken per day?
 Group the data by date, sum the number of steps and find the average.
-```{r}
+
+```r
   by.day <- activity.data %>%
     group_by(date) %>%
     summarize(steps = sum(steps, na.rm=TRUE))
@@ -40,15 +44,29 @@ Group the data by date, sum the number of steps and find the average.
   
   qplot(by.day$steps, xlab='steps', geom=c('histogram', 'rug'),
         main='Total Number of Steps Taken per Day')
-  
+```
+
+```
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
+```r
   print(c(mean = mean.daily.steps, median = median.daily.steps))
 ```
 
-The **mean** number of steps per day is ***`r round(mean.daily.steps, 2)`*** and the **median** number of steps per day is ***`r median.daily.steps`***.
+```
+##     mean   median 
+##  9354.23 10395.00
+```
+
+The **mean** number of steps per day is ***9354.23*** and the **median** number of steps per day is ***10395***.
 
 ## What is the average daily activity pattern?
 Find the mean of each 5 minute interval over the sample of days and graph the number of steps taken each interval on an averaged day.
-```{r}
+
+```r
   by.interval <- activity.data %>%
     group_by(time) %>%
     summarize(steps = mean(steps, na.rm = TRUE))
@@ -60,20 +78,35 @@ Find the mean of each 5 minute interval over the sample of days and graph the nu
   qplot(seq_along(steps), steps, data=by.interval, geom=c('line'),
         main="Average Daily Activity Pattern", xlab='time of day') + 
     x.ticks
-  
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+
+```r
   print.AsIs(max.step.interval)
 ```
-The interval with the **maximum number of steps** on average is **the five minute period begining *`r max.step.interval$time`*** in which an average of *`r round(max.step.interval$steps, 2)` steps* are taken.
+
+```
+##    time    steps
+## 1 08:35 206.1698
+```
+The interval with the **maximum number of steps** on average is **the five minute period begining *08:35*** in which an average of *206.17 steps* are taken.
 
 ## Imputing missing values
-```{r}
+
+```r
   sum(is.na(activity.data$steps))
 ```
 
-There are ***`r sum(is.na(activity.data$steps))`* missing step values** in the activity data set.
+```
+## [1] 2304
+```
+
+There are ***2304* missing step values** in the activity data set.
 
 Using the values calculated for each interval, impute the missing values.
-```{r}
+
+```r
   incomplete.cases <- activity.data %>%
     filter(is.na(activity.data$steps)) %>%
     left_join(by.interval, by='time') %>%
@@ -90,16 +123,30 @@ Using the values calculated for each interval, impute the missing values.
   
   qplot(imputed.by.day$steps, xlab='steps', geom=c('histogram', 'rug'),
         main='Total Number of Steps Taken per Day (Imputed Values)')
-  
+```
+
+```
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+
+```r
   print(c(
     mean = imputed.mean.daily.steps,
     median = imputed.median.daily.steps))
 ```
-With the imputed data, the **mean** is now ***`r format(imputed.mean.daily.steps)`* steps** and the median is now ***`r format(imputed.median.daily.steps)`* steps**. The imputed mean is *`r round(imputed.mean.daily.steps - mean.daily.steps, 2)`* steps more than the collected data. The imputed median is *`r round(imputed.median.daily.steps - median.daily.steps, 2)`* steps more than the collected data. There are fewer 0 values and more values near mean.
+
+```
+##     mean   median 
+## 10766.19 10766.19
+```
+With the imputed data, the **mean** is now ***10766.19* steps** and the median is now ***10766.19* steps**. The imputed mean is *1411.96* steps more than the collected data. The imputed median is *371.19* steps more than the collected data. There are fewer 0 values and more values near mean.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r}
+
+```r
   day.types <- as.factor(c('weekend', 'weekday'))
   by.day.and.interval = activity.data %>%
     mutate(day.type = sapply(date, function(d)
@@ -117,3 +164,5 @@ With the imputed data, the **mean** is now ***`r format(imputed.mean.daily.steps
         main='Differences in Activity Patterns') +
     x.ticks + theme(legend.position='none')
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
